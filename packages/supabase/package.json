@@ -1,0 +1,8 @@
+{
+  "name": "supabase",
+  "packageManager": "yarn@4.5.0",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "supabase": "1.200.3"
+  }
+}
