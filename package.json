@@ -1,0 +1,7 @@
+{
+  "name": "indexer",
+  "packageManager": "yarn@4.5.0",
+  "workspaces": [
+    "packages/*"
+  ]
+}
