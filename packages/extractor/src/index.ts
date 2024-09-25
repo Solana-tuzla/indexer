@@ -12,15 +12,18 @@
 
 import * as web3 from '@solana/web3.js'
 import { BlockListener } from './Listeners/BlockListener/BlockListener'
-
+import { config } from 'dotenv'
+config({
+    path: './.env'
+});
 
 /**
  * Main function declaration
  */
 async function main() : Promise<void> {
-    console.log('Hello from the extractor!!!')
-    const wssUrl = 'wss://intensive-patient-diagram.solana-mainnet.quiknode.pro/d4ea94f530cb38e6f7ac727ed8eadf33a309d06b/';
-    const httpsUrl = 'https://intensive-patient-diagram.solana-mainnet.quiknode.pro/d4ea94f530cb38e6f7ac727ed8eadf33a309d06b/';
+    console.log('Extractor has started!')
+    const wssUrl = process.env.WSS_URL || ''
+    const httpsUrl = process.env.HTTPS_URL || ''
 
     const listener = new BlockListener(wssUrl, httpsUrl)
 
