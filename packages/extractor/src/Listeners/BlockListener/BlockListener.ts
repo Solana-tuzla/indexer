@@ -6,7 +6,7 @@ export class BlockListener {
     _httpsUrl: string;
     _connection: web3.Connection;
     _blockData: any; // Variable to store block data
-    _finalizedSlots: Array<any> = []; // Variable to store finalized slots to avoid duplicates
+    _finalizedSlots: Array<number> = []; // Variable to store finalized slots to avoid duplicates
 
 
     /** Constructor */
@@ -20,17 +20,23 @@ export class BlockListener {
     async listen() {
         this._connection.onSlotUpdate(async (slotUpdate) => {
             if (slotUpdate.type === 'root' || slotUpdate.type === 'optimisticConfirmation') {
-                // console.log(`Slot finalized: ${slotUpdate.slot}`);
+                //console.log(`Slot finalized: ${slotUpdate.slot}`);
                 
                 await this.fetchBlockDataWithRetry(slotUpdate.slot);
+
             }
         });
     }
 
+    async getBlockData(blockSlot: number) {
+        console.log('Fetching skipped slot in case of an error: ' + blockSlot);
+        await this.fetchBlockDataWithRetry(blockSlot);
+        return this._blockData;
+    }
 
 
     // This code fetches block data with retries to make sure that no blocks are skipped
-    async fetchBlockDataWithRetry(slot: number, retries: number = 40, delay: number = 600) {
+    async fetchBlockDataWithRetry(slot: number, retries: number = 20, delay: number = 600) {
 
         for (let attempt = 1; attempt <= retries; attempt++) {
             
@@ -52,6 +58,12 @@ export class BlockListener {
                     // Makes sure that _finalizedSlots doesn't have more than 20 elements
                     if (this._finalizedSlots.length >= 20) {
                         this._finalizedSlots.splice(0, 1);
+                        //this._finalizedSlots.sort((a, b) => a - b);
+                        //console.log('Finalized slots: ' + this._finalizedSlots);
+
+                        
+
+
                     }
 
                     this._blockData = block;
@@ -60,13 +72,19 @@ export class BlockListener {
                     console.log(`New block received from slot ${slot}: ` + this._blockData);
                     const date = new Date();
                     const formattedDate = `${date.getUTCDate()}/${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}:${date.getUTCMilliseconds()}`;
-                    //console.log('Block finalized at: ' + formattedDate);
+                    console.log(`Block at slot ${slot} at: ` + formattedDate);
                     
                     return;
                 }
-            } catch (error) {
+            } catch (error : any) {
+
+                if (error.response && error.response.status === 429) {
+                    console.error("Rate limit exceeded, pausing for 1 seconds");
+                    await this.delay(1000);
+                }
+
                 // If error -32004 happens (block data not available yet), this logs a warning
-                if ((error as { code: number }).code === -32004) {
+                if (error.code === -32004) {
                     //console.warn(`Block data not available yet for slot: ${slot}, attempt: ${attempt}`);
                 } else {
                     console.error("Error fetching block data:", error);
